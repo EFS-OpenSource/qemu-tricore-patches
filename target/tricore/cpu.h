@@ -52,6 +52,9 @@ typedef struct CPUArchState {
     /* Floating Point Registers */
     float_status fp_status;
 
+    uint32_t irq_pending;
+    uint32_t reset_pending;
+
     /* Internal CPU feature flags.  */
     uint64_t features;
 } CPUTriCoreState;
@@ -102,9 +105,12 @@ FIELD(ICR, CCPN, 0, 8)
 
 uint32_t icr_get_ie(CPUTriCoreState *env);
 uint32_t icr_get_ccpn(CPUTriCoreState *env);
+uint32_t icr_get_pipn(CPUTriCoreState *env);
 
 void icr_set_ccpn(CPUTriCoreState *env, uint32_t val);
 void icr_set_ie(CPUTriCoreState *env, uint32_t val);
+
+#define EXCP_IRQ      2
 
 #define MASK_PSW_USB 0xff000000
 #define MASK_USB_C   0x80000000
@@ -119,14 +125,15 @@ void icr_set_ie(CPUTriCoreState *env, uint32_t val);
 #define MASK_PSW_CDE 0x00000080
 #define MASK_PSW_CDC 0x0000007f
 #define MASK_PSW_FPU_RM 0x3000000
+#define MASK_PSW_S 0x00004000
 
 #define MASK_SYSCON_PRO_TEN 0x2
 #define MASK_SYSCON_FCD_SF  0x1
+#define MASK_SYSCON_IS 0x4
 
 #define MASK_CPUID_MOD     0xffff0000
 #define MASK_CPUID_MOD_32B 0x0000ff00
 #define MASK_CPUID_REV     0x000000ff
-
 
 #define MASK_FCX_FCXS 0x000f0000
 #define MASK_FCX_FCXO 0x0000ffff
@@ -140,6 +147,16 @@ void icr_set_ie(CPUTriCoreState *env, uint32_t val);
 #define MASK_DBGSR_PREVSUSP 0x20
 #define MASK_DBGSR_PEVT 0x40
 #define MASK_DBGSR_EVTSRC 0x1f00
+
+#define BITPOS_ICR_IE_1_3 8
+#define BITPOS_ICR_IE_1_6 15
+#define MASK_ICR_PIPN 0x00ff0000
+#define MASK_ICR_IE_1_3   (1U << BITPOS_ICR_IE_1_3)
+#define MASK_ICR_IE_1_6   (1U << BITPOS_ICR_IE_1_6)
+#define MASK_ICR_CCPN 0x000000ff
+
+#define MASK_BIV_VSS 0x00000001
+#define MASK_BIV_BIV 0xFFFFFFFE
 
 enum tricore_priv_levels {
     TRICORE_PRIV_UM0 = 0x0, /* user mode-0 flag */
@@ -252,6 +269,8 @@ FIELD(TB_FLAGS, PRIV, 0, 2)
 
 void cpu_state_reset(CPUTriCoreState *s);
 void tricore_tcg_init(void);
+void tricore_cpu_do_interrupt(CPUState *cs);
+void tricore_check_interrupts(CPUTriCoreState *cs);
 
 static inline void cpu_get_tb_cpu_state(CPUTriCoreState *env, vaddr *pc,
                                         uint64_t *cs_base, uint32_t *flags)

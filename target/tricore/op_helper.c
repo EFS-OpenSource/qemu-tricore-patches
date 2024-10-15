@@ -16,6 +16,7 @@
  */
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "qemu/log.h"
 #include "qemu/host-utils.h"
 #include "exec/helper-proto.h"
 #include "exec/exec-all.h"
@@ -2538,6 +2539,125 @@ static void restore_context_lower(CPUTriCoreState *env, target_ulong ea,
     env->gpr_d[5] = cpu_ldl_data(env, ea+52);
     env->gpr_d[6] = cpu_ldl_data(env, ea+56);
     env->gpr_d[7] = cpu_ldl_data(env, ea+60);
+}
+
+void tricore_cpu_do_interrupt(CPUState *cs)
+{
+    TriCoreCPU *cpu = TRICORE_CPU(cs);
+    CPUTriCoreState *env = &cpu->env;
+    target_ulong ea;
+    target_ulong new_FCX;
+    target_ulong psw;
+
+    psw = psw_read(env);
+    cs->exception_index = -1;
+
+    if (env->PSW & MASK_PSW_CDE) {
+        if (cdc_increment(&psw)) {
+            /* CDO trap */
+            qemu_log(
+                    "tricore_cpu_do_interrupt raise exception env->PSW 0x%x\n",
+                    env->PSW);
+            /* raise_exception_sync_helper(env,
+             * TRAPC_CTX_MNG, TIN3_CDO, GETPC()); */
+        }
+    }
+
+    /* PSW.CDE = 1;*/
+    psw = (env->PSW & (~MASK_PSW_CDE)) | (0b1 << 7);
+
+    /*
+     if (env->FCX == 0) {
+     FCU trap
+     raise_exception_sync_helper(env, TRAPC_CTX_MNG, TIN3_FCU, GETPC() );
+     }
+     */
+
+    /* The following functionality is defined in the Architecture
+     Guide Vol. 1 page 5-2. Save upper context of current task.
+     EA = {FCX.FCXS, 6'b0, FCX.FCXO, 6'b0}; */
+    ea = ((env->FCX & MASK_FCX_FCXS) << 12) + ((env->FCX & MASK_FCX_FCXO) << 6);
+
+    /* new_FCX = M(EA, word); */
+    new_FCX = cpu_ldl_data(env, ea);
+
+    helper_stucx(env, ea);
+
+    env->PSW = psw;
+
+    /* PCXI.UL = 1; */
+    pcxi_set_ul(env, 1);
+
+    /* The interrupt system is globally disabled: ICR.IE = 0.
+     The old ICR.IE is saved into PCXI.PIE. */
+    pcxi_set_pie(env, icr_get_ie(env));
+    icr_set_ie(env, 0);
+
+    /* The Current CPU Priority Number (ICR.CCPN) is saved into the Previous
+     CPU Priority Number (PCXI.PCPN) field. */
+    pcxi_set_pcpn(env, icr_get_ccpn(env));
+
+    /* if (tmp_FCX == LCX) trap(FCD);
+     if (tmp_FCX == env->LCX) {
+     FCD trap
+     raise_exception_sync_helper(env, TRAPC_CTX_MNG, TIN3_FCD, GETPC());
+     }
+     */
+
+    /* If the processor was not previously using the interrupt stack
+     (PSW.IS = 0), then the A[10] Stack Pointer is set to the interrupt
+     stack pointer (ISP). The stack pointer bit is then set for using
+     the interrupt stack: PSW.IS = 1. */
+    if ((env->PSW & MASK_PSW_IS) >> 9 == 0x0) {
+        env->gpr_a[10] = env->ISP;
+        env->PSW = (env->PSW & (~MASK_PSW_IS)) | (0b1 << 9);
+    }
+
+    /* The I/O mode is set to Supervisor mode, which means all permissions are
+     enabled: PSW.IO = 10B. */
+    env->PSW = (env->PSW & (~MASK_PSW_IO)) | (0b10 << 10);
+
+    /* The current Protection Register Set is set to 0: PSW.PRS = 00B. */
+    env->PSW = (env->PSW & (~MASK_PSW_PRS)) | (0b00 << 12);
+
+    /* The Call Depth Counter (PSW.CDC) is cleared, and the call depth limit
+     selector is set for 64: PSW.CDC = 0000000B. */
+    env->PSW = (env->PSW & (~MASK_PSW_CDC)) | (0b0000000);
+
+    /* Call Depth Counter is enabled, PSW.CDE = 1. */
+    env->PSW = (env->PSW & (~MASK_PSW_CDE)) | (0b1 << 7);
+
+    /* PSW Safety bit is set to value defined in the SYSCON register. PSW.S =
+     SYSCON.IS. */
+    env->PSW = (env->PSW & (~MASK_PSW_S))
+            | ((env->SYSCON & MASK_SYSCON_IS) << 12);
+
+    /* Write permission to global registers A[0], A[1], A[8], A[9] is disabled:
+      PSW.GW = 0. */
+    env->PSW = (env->PSW & (~MASK_PSW_GW)) | (0b0 << 8);
+
+    /* The Pending Interrupt Priority Number (ICR.PIPN) is saved into the
+    Current CPU Priority Number (ICR.CCPN) field. */
+    env->ICR = (env->ICR & (~MASK_ICR_CCPN))
+            | ((env->ICR & (MASK_ICR_PIPN)) >> 16);
+
+    /* Return Address (A[11]) is updated with the current PC. */
+    env->gpr_a[11] = env->PC;
+
+    /* New PC register calculation. */
+    if ((env->BIV & MASK_BIV_VSS) == 0) {
+        env->PC = (env->BIV & 0xFFFFFFFE) | 0b0
+                | ((env->ICR & MASK_ICR_PIPN) >> 11);
+    } else {
+        env->PC = (env->BIV & 0xFFFFFFFE) | 0b0
+                | ((env->ICR & MASK_ICR_PIPN) >> 13);
+    }
+
+    /* Update FCX.FCXS FCX.FCXO
+     PCXI[19: 0] = FCX[19: 0]; */
+    env->PCXI = (env->PCXI & 0xfff00000) | (env->FCX & 0xfffff);
+    /* FCX[19: 0] = new_FCX[19: 0]; */
+    env->FCX = (env->FCX & 0xfff00000) | (new_FCX & 0xfffff);
 }
 
 void helper_call(CPUTriCoreState *env, uint32_t next_pc)
