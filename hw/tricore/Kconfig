@@ -11,6 +11,10 @@ config TC27X_SOC
     select TRICORE_IRBUS
     select TRICORE_SCU
     select TRICORE_STM
+    select TRICORE_VIRT
 
 config TRICORE_SCU
+    bool
+
+config TRICORE_VIRT
     bool
