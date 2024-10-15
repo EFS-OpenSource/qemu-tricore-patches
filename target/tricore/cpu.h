@@ -41,6 +41,8 @@ typedef struct CPUArchState {
     uint32_t PSW_USB_AV;  /* Only if bit 31 set, then flag is set. */
     uint32_t PSW_USB_SAV; /* Only if bit 31 set, then flag is set. */
 
+    uint32_t PC_entry; /* stored entrypoint for software reset */ 
+
 #define R(ADDR, NAME, FEATURE) uint32_t NAME;
 #define A(ADDR, NAME, FEATURE) uint32_t NAME;
 #define E(ADDR, NAME, FEATURE) uint32_t NAME;
