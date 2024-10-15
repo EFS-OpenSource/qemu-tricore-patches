@@ -4,8 +4,18 @@ config TRICORE_TESTBOARD
 config TRIBOARD
     bool
     select TC27X_SOC
+    select TC39X_SOC
 
 config TC27X_SOC
+    bool
+    select TRICORE_ASCLIN
+    select TRICORE_IRBUS
+    select TRICORE_SCU
+    select TRICORE_STM
+    select TRICORE_VIRT
+    select TRICORE_SFR
+
+config TC39X_SOC
     bool
     select TRICORE_ASCLIN
     select TRICORE_IRBUS
