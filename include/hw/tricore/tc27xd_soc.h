@@ -18,17 +18,27 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TC27X_SOC_H
-#define TC27X_SOC_H
+#ifndef TC27XD_SOC_H
+#define TC27XD_SOC_H
 
 #include "hw/sysbus.h"
 #include "target/tricore/cpu.h"
 #include "qom/object.h"
 
-#define TYPE_TC27X_SOC ("tc27x-soc")
-OBJECT_DECLARE_TYPE(TC27XSoCState, TC27XSoCClass, TC27X_SOC)
+#include "hw/tricore/tricore.h"
+#include "hw/tricore/tricore_virt.h"
+#include "hw/tricore/tricore_ir.h"
+#include "hw/tricore/tricore_scu.h"
+#include "hw/tricore/tricore_sfr.h"
+#include "hw/intc/tricore_irbus.h"
+#include "hw/timer/tricore_stm.h"
+#include "hw/char/tricore_asclin.h"
+#include "hw/tricore/tc_soc.h"
 
-typedef struct TC27XSoCCPUMemState {
+#define TYPE_TC27XD_SOC ("tc27xd-soc")
+OBJECT_DECLARE_TYPE(TC27XDSoCState, TC27XDSoCClass, TC27XD_SOC)
+
+typedef struct TC27XDSoCCPUMemState {
 
     MemoryRegion dspr;
     MemoryRegion pspr;
@@ -38,9 +48,9 @@ typedef struct TC27XSoCCPUMemState {
     MemoryRegion pcache;
     MemoryRegion ptag;
 
-} TC27XSoCCPUMemState;
+} TC27XDSoCCPUMemState;
 
-typedef struct TC27XSoCFlashMemState {
+typedef struct TC27XDSoCFlashMemState {
 
     MemoryRegion pflash0_c;
     MemoryRegion pflash1_c;
@@ -57,9 +67,9 @@ typedef struct TC27XSoCFlashMemState {
     MemoryRegion emem_c;
     MemoryRegion emem_u;
 
-} TC27XSoCFlashMemState;
+} TC27XDSoCFlashMemState;
 
-typedef struct TC27XSoCState {
+typedef struct TC27XDSoCState {
     /*< private >*/
     SysBusDevice parent_obj;
 
@@ -69,45 +79,45 @@ typedef struct TC27XSoCState {
     MemoryRegion dsprX;
     MemoryRegion psprX;
 
-    TC27XSoCCPUMemState cpu0mem;
-    TC27XSoCCPUMemState cpu1mem;
-    TC27XSoCCPUMemState cpu2mem;
+    TC27XDSoCCPUMemState cpu0mem;
+    TC27XDSoCCPUMemState cpu1mem;
+    TC27XDSoCCPUMemState cpu2mem;
+    
+    TriCoreIRBUSState *irbus;
+    TriCoreVIRTState *virt;
+    TriCoreSCUState *scu;
+    TriCoreSTMState *stm;
+    TriCoreASCLINState *asclin;
+    TriCoreSFRState *sfr;
 
-    TC27XSoCFlashMemState flashmem;
+    qemu_irq irq[IR_SRC_COUNT];
+    qemu_irq *cpu_irq;
 
-} TC27XSoCState;
+    TC27XDSoCFlashMemState flashmem;
 
-typedef struct MemmapEntry {
-    hwaddr base;
-    hwaddr size;
-} MemmapEntry;
+} TC27XDSoCState;
 
-typedef struct TC27XSoCClass {
+typedef struct TC27XDSoCClass {
     DeviceClass parent_class;
 
     const char *name;
     const char *cpu_type;
     const MemmapEntry *memmap;
     uint32_t num_cpus;
-} TC27XSoCClass;
+} TC27XDSoCClass;
+
+#define TC27XD_MEMDEV_CPU(n) \
+    TC27XD_DSPR##n,   \
+    TC27XD_DCACHE##n, \
+    TC27XD_DTAG##n,   \
+    TC27XD_PSPR##n,   \
+    TC27XD_PCACHE##n, \
+    TC27XD_PTAG##n
 
 enum {
-    TC27XD_DSPR2,
-    TC27XD_DCACHE2,
-    TC27XD_DTAG2,
-    TC27XD_PSPR2,
-    TC27XD_PCACHE2,
-    TC27XD_PTAG2,
-    TC27XD_DSPR1,
-    TC27XD_DCACHE1,
-    TC27XD_DTAG1,
-    TC27XD_PSPR1,
-    TC27XD_PCACHE1,
-    TC27XD_PTAG1,
-    TC27XD_DSPR0,
-    TC27XD_PSPR0,
-    TC27XD_PCACHE0,
-    TC27XD_PTAG0,
+    TC27XD_MEMDEV_CPU(2),
+    TC27XD_MEMDEV_CPU(1),
+    TC27XD_MEMDEV_CPU(0),
     TC27XD_PFLASH0_C,
     TC27XD_PFLASH1_C,
     TC27XD_OLDA_C,
@@ -124,6 +134,12 @@ enum {
     TC27XD_EMEM_U,
     TC27XD_PSPRX,
     TC27XD_DSPRX,
+    TC27XD_SFR,
+    TC27XD_VIRT,
+    TC27XD_IRBUS,
+    TC27XD_SCU,
+    TC27XD_STM,
+    TC27XD_ASCLIN,
 };
 
 #endif

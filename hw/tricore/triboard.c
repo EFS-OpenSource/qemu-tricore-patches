@@ -29,7 +29,7 @@
 #include "qemu/error-report.h"
 
 #include "hw/tricore/triboard.h"
-#include "hw/tricore/tc27x_soc.h"
+#include "hw/tricore/tc27xd_soc.h"
 
 static void tricore_load_kernel(const char *kernel_filename)
 {
@@ -57,9 +57,9 @@ static void triboard_machine_init(MachineState *machine)
     TriBoardMachineState *ms = TRIBOARD_MACHINE(machine);
     TriBoardMachineClass *amc = TRIBOARD_MACHINE_GET_CLASS(machine);
 
-    object_initialize_child(OBJECT(machine), "soc", &ms->tc27x_soc,
+    object_initialize_child(OBJECT(machine), "soc", &ms->tc27xd_soc,
             amc->soc_name);
-    sysbus_realize(SYS_BUS_DEVICE(&ms->tc27x_soc), &error_fatal);
+    sysbus_realize(SYS_BUS_DEVICE(&ms->tc27xd_soc), &error_fatal);
 
     if (machine->kernel_filename) {
         tricore_load_kernel(machine->kernel_filename);

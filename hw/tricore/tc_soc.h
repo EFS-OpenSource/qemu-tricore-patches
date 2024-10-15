@@ -1,5 +1,5 @@
 /*
- * Infineon TriBoard System emulation.
+ * Infineon tc39x SoC System emulation.
  *
  * Copyright (c) 2020 Andreas Konopik <andreas.konopik@efs-auto.de>
  * Copyright (c) 2020 David Brenken <david.brenken@efs-auto.de>
@@ -18,31 +18,19 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "qapi/error.h"
-#include "hw/boards.h"
-#include "sysemu/sysemu.h"
-#include "exec/address-spaces.h"
+#ifndef TC39X_SOC_H
+#define TC39X_SOC_H
+
+#include "hw/sysbus.h"
+#include "target/tricore/cpu.h"
 #include "qom/object.h"
 
-#include "hw/tricore/tc27xd_soc.h"
-
-#define TYPE_TRIBOARD_MACHINE MACHINE_TYPE_NAME("triboard")
-typedef struct TriBoardMachineState TriBoardMachineState;
-typedef struct TriBoardMachineClass TriBoardMachineClass;
-DECLARE_OBJ_CHECKERS(TriBoardMachineState, TriBoardMachineClass,
-                     TRIBOARD_MACHINE, TYPE_TRIBOARD_MACHINE)
+#include "hw/tricore/tricore.h"
 
 
-struct TriBoardMachineState {
-    MachineState parent;
+typedef struct MemmapEntry {
+    hwaddr base;
+    hwaddr size;
+} MemmapEntry;
 
-    TC27XDSoCState tc27xd_soc;
-};
-
-struct TriBoardMachineClass {
-    MachineClass parent_obj;
-
-    const char *name;
-    const char *desc;
-    const char *soc_name;
-};
+#endif
