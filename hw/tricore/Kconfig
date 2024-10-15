@@ -7,3 +7,4 @@ config TRIBOARD
 
 config TC27X_SOC
     bool
+    select TRICORE_ASCLIN
