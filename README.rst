@@ -1,3 +1,21 @@
+
+
+e:fs QEMU TriCore Patches
+=========================
+
+This is a fork of the QEMU repository with patches for the Infineon TriCore architecture, allowing for better emulation in testing frameworks.
+
+These patches include the following changes:
+
+- Adds ASCLIN (Asynchronous/Synchronous Interface), transferring data using uart\_transmit functions.
+- Adds interrupt router for handling interrupts effectively.
+- Adds basic STM (System Timer Module) support, triggering interrupts.
+- Adds support for a rudimentary boot ROM (not included) to check ABM headers and prepare execution of user code.
+- Adds experimental virtualization support device for printing on screen, sleeping, and quitting the emulator.
+
+With these changes, users can run binaries designed for, e.g., TriBoards in the emulator unmodified, while still maintaining high throughput thanks to certain paravirtualization features.
+We hope that the community will adopt our changes and further improve them, helping QEMU move closer to fully emulating real-world code.
+
 ===========
 QEMU README
 ===========
