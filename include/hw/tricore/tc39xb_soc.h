@@ -1,8 +1,9 @@
 /*
  * Infineon tc39x SoC System emulation.
  *
- * Copyright (c) 2020 Andreas Konopik <andreas.konopik@efs-auto.de>
- * Copyright (c) 2020 David Brenken <david.brenken@efs-auto.de>
+ * Copyright (c) 2020 Andreas Konopik
+ * Copyright (c) 2020 David Brenken
+ * Copyright (c) 2024 Georg Hofstetter <georg.hofstetter@efs-techhub.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

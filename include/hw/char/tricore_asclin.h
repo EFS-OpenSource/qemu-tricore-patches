@@ -1,7 +1,8 @@
 /*
  * QEMU TriCore ASCLIN device.
  *
- * Copyright (c) 2017 David Brenken <david.brenken@efs-auto.de>
+ * Copyright (c) 2017 David Brenken
+ * Copyright (c) 2024 Georg Hofstetter <georg.hofstetter@efs-techhub.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2 or later.
  * See the COPYING file in the top-level directory.
